@@ -55,5 +55,6 @@
 #include "knock.h"
 #include "tzaccess.h"
 #include "tziot.h"
+#include "bleserver.h"
 
 #endif

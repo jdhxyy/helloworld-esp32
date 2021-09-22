@@ -25,6 +25,7 @@ COMPONENT_SRCDIRS :=  .
 	clib/knock-clang
 	clib/tzaccess-clang
 	clib/tziot-clang
+	clib/bleserver-esp32
 COMPONENT_PRIV_INCLUDEDIRS := include
 	drivers/include
 	framework/include
@@ -49,3 +50,4 @@ COMPONENT_PRIV_INCLUDEDIRS := include
 	clib/knock-clang
 	clib/tzaccess-clang
 	clib/tziot-clang
+	clib/bleserver-esp32

@@ -20,6 +20,9 @@ static int wifiScanTask(void);
 static void dealNetDataFunc(uint8_t* bytes, int size, uint32_t ip, uint16_t port);
 static void corePipeSend(uint8_t* data, int size, uint8_t* dstIP, uint16_t dstPort);
 
+static void dealBleRx(uint8_t* bytes, int size);
+static int bleTxTask(void);
+
 // testSevice 测试服务
 // 遵循谁调用谁释放原则,resp需要由回调函数使用TZMalloc开辟空间,DCom负责释放空间
 // 返回值为0表示回调成功,否则是错误码
@@ -98,6 +101,14 @@ static void mainThread(void* param) {
     }
     // 注册接收数据回调
     UdpRegisterObserver(dealNetDataFunc);
+
+    if (BleServerLoad("ble_jdh99") == false) {
+        LE(TAG, "main thread load failed!ble server load failed!\n");
+        goto EXIT;
+    }
+    BleServerRegisterObserver(dealBleRx);
+    // ble发送任务
+    AsyncStart(bleTxTask, ASYNC_SECOND);
 
     // tziot协议栈载入
     TZIotLoad(LOCAL_IA, LOCAL_PWD);
@@ -179,6 +190,21 @@ static void dealNetDataFunc(uint8_t* bytes, int size, uint32_t ip, uint16_t port
     TZIotPipeCoreReceive(bytes, size, srcIP, port);
 }
 
+static void dealBleRx(uint8_t* bytes, int size) {
+    LI(TAG, "ble rx data.len:%d", size);
+}
+
+static int bleTxTask(void) {
+    static struct pt pt = {0};
+    
+    PT_BEGIN(&pt);
+
+    PT_WAIT_UNTIL(&pt, BleServerIsConnect() == true);
+    BleTx((uint8_t*)"jdh99", 5);
+
+    PT_END(&pt);
+}
+
 // testSevice 测试服务
 // 遵循谁调用谁释放原则,resp需要由回调函数使用TZMalloc开辟空间,DCom负责释放空间
 // 返回值为0表示回调成功,否则是错误码
@@ -238,8 +264,9 @@ static void corePipeSend(uint8_t* data, int size, uint8_t* dstIP, uint16_t dstPo
 static void dealCmd(char* cmd) {
     if (strcmp(cmd, "abc") == 0) {
         TZMallocStatus status = TZMallocGetStatus(0);
-        printf("UsedSize:%d FreeSize:%d MaxFreeSize:%d MallocNum:%d FreeNum:%d\n", status.UsedSize, status.FreeSize, 
-            status.MaxFreeSize, status.MallocNum, status.FreeNum);
+        printf("UsedSize:%ld FreeSize:%ld MaxFreeSize:%ld MallocNum:%ld FreeNum:%ld\n", 
+            status.UsedSize, status.FreeSize, status.MaxFreeSize, 
+            status.MallocNum, status.FreeNum);
 
         int num = TZMallocGetUserNum(0);
         int mid = -1;
@@ -282,8 +309,9 @@ static void consoleThread(void* param) {
     }
 
     TZMallocStatus status = TZMallocGetStatus(0);
-    printf("UsedSize:%d FreeSize:%d MaxFreeSize:%d MallocNum:%d FreeNum:%d\n", status.UsedSize, status.FreeSize, 
-        status.MaxFreeSize, status.MallocNum, status.FreeNum);
+    printf("UsedSize:%ld FreeSize:%ld MaxFreeSize:%ld MallocNum:%ld FreeNum:%ld\n", 
+            status.UsedSize, status.FreeSize, status.MaxFreeSize, 
+            status.MallocNum, status.FreeNum);
     while (1) {
         // num = fread(input, 1, 30, stdin);
         // if (num > 0) {

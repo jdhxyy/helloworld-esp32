@@ -18,3 +18,4 @@ https://github.com/jdhxyy/tzbox.git
 https://github.com/jdhxyy/knock-clang.git
 https://github.com/jdhxyy/tzaccess-clang.git
 https://github.com/jdhxyy/tziot-clang.git
+https://github.com/jdhxyy/bleserver-esp32.git
