@@ -59,5 +59,6 @@
 #include "tzflash.h"
 #include "tzflashadapter.h"
 #include "platsa.h"
+#include "upgrade.h"
 
 #endif

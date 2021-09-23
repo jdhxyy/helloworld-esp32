@@ -22,3 +22,4 @@ https://github.com/jdhxyy/bleserver-esp32.git
 https://github.com/jdhxyy/tzflash.git
 https://github.com/jdhxyy/tzflashadapter-esp32.git
 https://github.com/jdhxyy/platsa.git
+https://github.com/jdhxyy/upgrade-esp32.git

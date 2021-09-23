@@ -29,6 +29,7 @@ COMPONENT_SRCDIRS :=  .
 	clib/tzflash
 	clib/tzflashadapter-esp32
 	clib/platsa
+	clib/upgrade-esp32
 COMPONENT_PRIV_INCLUDEDIRS := include
 	drivers/include
 	framework/include
@@ -57,3 +58,4 @@ COMPONENT_PRIV_INCLUDEDIRS := include
 	clib/tzflash
 	clib/tzflashadapter-esp32
 	clib/platsa
+	clib/upgrade-esp32

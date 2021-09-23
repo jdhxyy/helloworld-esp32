@@ -138,6 +138,15 @@ static void mainThread(void* param) {
     // 创建控制台输入线程
     BrorThreadCreate(consoleThread, "consoleThread", BROR_THREAD_PRIORITY_MIDDLE, 
         10 * 1024);
+    
+    UpgradeBegin();
+    uint8_t arr[1024] = {0};
+    for (int i = 0; i < 1024; i++) {
+        arr[i] = i;
+    }
+    UpgradeWrite(arr, 128);
+    UpgradeWrite(arr, 128);
+    UpgradeEnd();
 
     while (1) {
         AsyncRun();
