@@ -26,6 +26,9 @@ COMPONENT_SRCDIRS :=  .
 	clib/tzaccess-clang
 	clib/tziot-clang
 	clib/bleserver-esp32
+	clib/tzflash
+	clib/tzflashadapter-esp32
+	clib/platsa
 COMPONENT_PRIV_INCLUDEDIRS := include
 	drivers/include
 	framework/include
@@ -51,3 +54,6 @@ COMPONENT_PRIV_INCLUDEDIRS := include
 	clib/tzaccess-clang
 	clib/tziot-clang
 	clib/bleserver-esp32
+	clib/tzflash
+	clib/tzflashadapter-esp32
+	clib/platsa

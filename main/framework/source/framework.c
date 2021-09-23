@@ -14,6 +14,7 @@ static int mid = -1;
 
 static void mainThread(void* param);
 static void laganPrint(uint8_t* bytes, int size);
+static void testPlatsa(void);
 static void dealWifiScanResultFunc(WifiApInfo* apInfo, int arrayLen);
 static void dealWifiConnectResultFunc(bool result);
 static int wifiScanTask(void);
@@ -70,6 +71,16 @@ static void mainThread(void* param) {
         LE(TAG, "main thread load failed!maoolc register failed!\n");
         goto EXIT;
     }
+
+    if (TZFlashAdapterLoad("userdata") == false) {
+        LE(TAG, "main thread load failed!tzflash adapter load failed\n");
+        goto EXIT;
+    }
+    if (PlatsaLoad(TZMallocRegister(0, "platsa", 2048)) == false) {
+        LE(TAG, "main thread load failed!platsa load failed\n");
+        goto EXIT;
+    }
+    testPlatsa();
 
     //  ±÷”ƒ£øÈ‘ÿ»Î
     TZTimeLoad(GetLocalTimeUs);
@@ -141,6 +152,31 @@ static void laganPrint(uint8_t* bytes, int size) {
     printf((char*)bytes);
 }
 
+static void testPlatsa(void) {
+    if (PlatsaRecovery(0, 4096, 4096)) {
+        LI(TAG, "platsa recovery1 success");
+        LI(TAG, "platsa get:%s", (char*)PlatsaGet("name", NULL));
+        LI(TAG, "platsa get:%s", (char*)PlatsaGet("title", NULL));
+    } else {
+        LW(TAG, "platsa recovery1 failed");
+    }
+
+    LI(TAG, "platsa set name:%d", PlatsaSet("name", (uint8_t*)"jdh99", 6));
+    LI(TAG, "platsa set ok:%d", PlatsaSet("title", (uint8_t*)"ok", 3));
+    LI(TAG, "platsa get:%s", (char*)PlatsaGet("name", NULL));
+    LI(TAG, "platsa get:%s", (char*)PlatsaGet("title", NULL));
+
+    LI(TAG, "platsa save:%d", PlatsaSave(0, 4096, 4096));
+
+    if (PlatsaRecovery(0, 4096, 4096)) {
+        LI(TAG, "platsa recovery2 success");
+        LI(TAG, "platsa get:%s", (char*)PlatsaGet("name", NULL));
+        LI(TAG, "platsa get:%s", (char*)PlatsaGet("title", NULL));
+    } else {
+        LW(TAG, "platsa recovery2 failed");
+    }
+}
+
 static void dealWifiScanResultFunc(WifiApInfo* apInfo, int arrayLen) {
     for (int i = 0; i < arrayLen; i++) {
         LI("framework", "wifi ssid=%s\n", apInfo[i].Ssid);
@@ -196,11 +232,17 @@ static void dealBleRx(uint8_t* bytes, int size) {
 
 static int bleTxTask(void) {
     static struct pt pt = {0};
+    static char s[200] = {0};
     
     PT_BEGIN(&pt);
 
     PT_WAIT_UNTIL(&pt, BleServerIsConnect() == true);
-    BleTx((uint8_t*)"jdh99", 5);
+    //BleTx((uint8_t*)"jdh99", 5);
+
+    for (int i = 0; i < 180; i++) {
+        s[i]= 'a' + i % 25;
+    }
+    BleTx((uint8_t*)s, 180);
 
     PT_END(&pt);
 }

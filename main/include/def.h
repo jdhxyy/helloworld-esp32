@@ -56,5 +56,8 @@
 #include "tzaccess.h"
 #include "tziot.h"
 #include "bleserver.h"
+#include "tzflash.h"
+#include "tzflashadapter.h"
+#include "platsa.h"
 
 #endif
