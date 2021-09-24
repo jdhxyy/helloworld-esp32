@@ -9,7 +9,7 @@
 #define MAIN_THREAD_STACK_SIZE 40
 
 // 分配给TZMalloc的RAM大小.单位:KByte
-#define TZMALLOC_RAM_SIZE 10
+#define TZMALLOC_RAM_SIZE 20
 
 // wifi默认账号密码
 #define WIFI_SSID_DEFAULT "jdhp30"

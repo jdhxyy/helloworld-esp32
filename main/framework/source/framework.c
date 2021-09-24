@@ -7,19 +7,41 @@
 #define TAG "framework"
 
 // tzmalloc字节数
-#define MALLOC_SIZE 1024
+#define MALLOC_SIZE (20 * 1024)
+
+#define PIPE_UDP 0
+#define PIPE_BLE 1
 
 static uint64_t gPipe = 0;
 static int mid = -1;
 
+// 测试守护模块
+static intptr_t test1Handle = 0;
+static intptr_t test2Handle = 0;
+
+// 统计模块句柄
+int stUdpTxHandle = -1;
+int stUdpRxHandle = -1;
+int stBleTxHandle = -1;
+int stBleRxHandle = -1;
+
 static void mainThread(void* param);
 static void laganPrint(uint8_t* bytes, int size);
+static void feed(void);
+static void reboot(void);
+static int daemonTest(void);
+static int daemonTest1(void);
+static int daemonTest2(void);
+static int vsocketTest(void);
+static void vsocketCase1(void);
+static void vSocketSendBle(uint8_t* bytes, int size, uint32_t ip, uint16_t port);
 static void testPlatsa(void);
 static void dealWifiScanResultFunc(WifiApInfo* apInfo, int arrayLen);
 static void dealWifiConnectResultFunc(bool result);
 static int wifiScanTask(void);
 static void dealNetDataFunc(uint8_t* bytes, int size, uint32_t ip, uint16_t port);
 static void corePipeSend(uint8_t* data, int size, uint8_t* dstIP, uint16_t dstPort);
+static void dealVsocketRx(VSocketRxParam* rxParam);
 
 static void dealBleRx(uint8_t* bytes, int size);
 static int bleTxTask(void);
@@ -86,6 +108,29 @@ static void mainThread(void* param) {
     TZTimeLoad(GetLocalTimeUs);
     LI(TAG, "TZTimeLoad success");
 
+    // 守护模块载入
+    if (TZDaemonLoad(reboot, feed) == false) {
+        LE(TAG, "main thread load failed!tzdaemon load failed!\n");
+        goto EXIT;
+    }
+    // AsyncStart(daemonTest, ASYNC_ONLY_ONE_TIME);
+
+    if (VSocketLoad(mid, 3) == false) {
+        LE(TAG, "main thread load failed!vsocket load failed!\n");
+        goto EXIT;
+    }
+    AsyncStart(vsocketTest, ASYNC_ONLY_ONE_TIME);
+
+    // 统计模块
+    if (StatisticsLoad(10) == false) {
+        LE(TAG, "main thread load failed!statistics load failed!\n");
+        goto EXIT;
+    }
+    stUdpTxHandle = StatisticsRegister("udptx");
+    stUdpRxHandle = StatisticsRegister("udprx");
+    stBleTxHandle = StatisticsRegister("bletx");
+    stBleRxHandle = StatisticsRegister("blerx");
+
     // WIFI载入
     if (WifiLoad() == false) {
         LE(TAG, "main thread load failed!wifi load failed!\n");
@@ -128,12 +173,13 @@ static void mainThread(void* param) {
         LE(TAG, "main thread load failed!bind pipe failed!\n");
         goto EXIT;
     }
+    VSocketRegisterObserver(dealVsocketRx);
 
     // 注册测试服务
     TZIotRegister(1, testSevice);
 
     // 读取网络时间任务
-    AsyncStart(getTimeTask, 10 * ASYNC_SECOND);
+    AsyncStart(getTimeTask, ASYNC_SECOND);
 
     // 创建控制台输入线程
     BrorThreadCreate(consoleThread, "consoleThread", BROR_THREAD_PRIORITY_MIDDLE, 
@@ -227,16 +273,35 @@ static void dealNetDataFunc(uint8_t* bytes, int size, uint32_t ip, uint16_t port
     LI(TAG, "receive ip:0x%x, port:%d", ip, port);
     // LaganPrintHex(TAG, LAGAN_LEVEL_DEBUG, bytes, size);
     // UdpTx(bytes, size, ip, 8082);
-    uint8_t srcIP[4] = {0};
-    srcIP[0] = ip >> 24;
-    srcIP[1] = ip >> 16;
-    srcIP[2] = ip >> 8;
-    srcIP[3] = ip;
-    TZIotPipeCoreReceive(bytes, size, srcIP, port);
+
+    // uint8_t srcIP[4] = {0};
+    // srcIP[0] = ip >> 24;
+    // srcIP[1] = ip >> 16;
+    // srcIP[2] = ip >> 8;
+    // srcIP[3] = ip;
+    // TZIotPipeCoreReceive(bytes, size, srcIP, port);
+
+    StatisticsAdd(stUdpRxHandle);
+
+    VSocketRxParam param;
+    param.Pipe = PIPE_UDP;
+    param.Bytes = bytes;
+    param.Size = size;
+    param.IP = ip;
+    param.Port = port;
+    VSocketRx(&param);
 }
 
 static void dealBleRx(uint8_t* bytes, int size) {
     LI(TAG, "ble rx data.len:%d", size);
+
+    StatisticsAdd(stBleRxHandle);
+
+    VSocketRxParam param;
+    param.Pipe = PIPE_BLE;
+    param.Bytes = bytes;
+    param.Size = size;
+    VSocketRx(&param);
 }
 
 static int bleTxTask(void) {
@@ -251,7 +316,15 @@ static int bleTxTask(void) {
     for (int i = 0; i < 180; i++) {
         s[i]= 'a' + i % 25;
     }
-    BleTx((uint8_t*)s, 180);
+    // BleTx((uint8_t*)s, 180);
+
+    VSocketTxParam param;
+    param.Pipe = PIPE_BLE;
+    param.Bytes = (uint8_t*)s;
+    param.Size = 10;
+    VSocketTx(&param);
+
+    StatisticsAdd(stBleTxHandle);
 
     PT_END(&pt);
 }
@@ -309,7 +382,31 @@ static int getTimeTask(void) {
 
 static void corePipeSend(uint8_t* data, int size, uint8_t* dstIP, uint16_t dstPort) {
     uint32_t ip = (dstIP[0] << 24) + (dstIP[1] << 16) + (dstIP[2] << 8) + dstIP[3];
-    UdpTx(data, size, ip, dstPort);
+    // UdpTx(data, size, ip, dstPort);
+
+    VSocketTxParam param;
+    param.Pipe = PIPE_UDP;
+    param.Bytes = data;
+    param.Size = size;
+    param.IP = ip;
+    param.Port = dstPort;
+    VSocketTx(&param);
+
+    StatisticsAdd(stUdpTxHandle);
+}
+
+static void dealVsocketRx(VSocketRxParam* rxParam) {
+    LI(TAG, "vsocket %d rx.len:%d", rxParam->Pipe, rxParam->Size);
+    if (rxParam->Pipe != PIPE_UDP) {
+        return;
+    }
+
+    uint8_t srcIP[4] = {0};
+    srcIP[0] = rxParam->IP >> 24;
+    srcIP[1] = rxParam->IP >> 16;
+    srcIP[2] = rxParam->IP >> 8;
+    srcIP[3] = rxParam->IP;
+    TZIotPipeCoreReceive(rxParam->Bytes, rxParam->Size, srcIP, rxParam->Port);
 }
 
 static void dealCmd(char* cmd) {
@@ -339,6 +436,11 @@ static void dealCmd(char* cmd) {
             printf("tag=%s,total=%d,used=%d,malloc num=%d,free num = %d,exception num = %d\n", 
                 user->Tag, user->Total, user->Used, user->MallocNum, user->FreeNum, user->ExceptionNum);
         }
+        return;
+    }
+
+    if (strcmp(cmd, "def") == 0) {
+        StatisticsPrint();
         return;
     }
 }
@@ -405,4 +507,90 @@ static void consoleThread(void* param) {
     }
 
     BrorThreadDeleteMe();
+}
+
+static void feed(void) {
+    //LI(TAG, "feed");
+}
+
+static void reboot(void) {
+    LI(TAG, "reboot");
+}
+
+static int daemonTest(void) {
+    static struct pt pt = {0};
+
+    PT_BEGIN(&pt);
+
+    // 测试守护模块
+    test1Handle = TZDaemonMonitorTimeout("test1", 3 * ASYNC_SECOND);
+    if (test1Handle == 0) {
+        LE(TAG, "main thread load failed!tzdaemon monitor timeout failed!\n");
+    }
+    test2Handle = TZDaemonMonitorRetryCount("test2", 5);
+    if (test2Handle == 0) {
+        LE(TAG, "main thread load failed!tzdaemon monitor retry count failed!\n");
+    }
+    AsyncStart(daemonTest1, ASYNC_SECOND);
+    AsyncStart(daemonTest2, ASYNC_SECOND);
+
+    PT_END(&pt);
+}
+
+static int daemonTest1(void) {
+    static struct pt pt = {0};
+
+    PT_BEGIN(&pt);
+
+    TZDaemonUpdateTime(test1Handle);
+
+    PT_END(&pt);
+}
+
+static int daemonTest2(void) {
+    static struct pt pt = {0};
+
+    PT_BEGIN(&pt);
+
+    TZDaemonAddRetryNum(test2Handle);
+    TZDaemonClearRetryNum(test2Handle);
+
+    PT_END(&pt);
+}
+
+static int vsocketTest(void) {
+    static struct pt pt = {0};
+
+    PT_BEGIN(&pt);
+
+    vsocketCase1();
+
+    PT_END(&pt);
+}
+
+static void vsocketCase1(void) {
+    VSocketInfo info;
+    info.Pipe = PIPE_UDP;
+    info.IsAllowSend = WifiIsConnect;
+    info.Send = UdpTx;
+    info.MaxLen = UDP_RX_LEN_MAX;
+    info.TxFifoItemSum = 2;
+    info.RxFifoItemSum = 2;
+    if (VSocketCreate(&info) == false) {
+        LE(TAG, "create udp socket failed");
+    }
+    
+    info.Pipe = PIPE_BLE;
+    info.IsAllowSend = BleServerIsConnect;
+    info.Send = vSocketSendBle;
+    info.MaxLen = BLE_SERVER_RX_LEN_MAX;
+    info.TxFifoItemSum = 2;
+    info.RxFifoItemSum = 2;
+    if (VSocketCreate(&info) == false) {
+        LE(TAG, "create ble socket failed");
+    }
+}
+
+static void vSocketSendBle(uint8_t* bytes, int size, uint32_t ip, uint16_t port) {
+    BleTx(bytes, size);
 }

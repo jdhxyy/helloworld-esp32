@@ -23,3 +23,6 @@ https://github.com/jdhxyy/tzflash.git
 https://github.com/jdhxyy/tzflashadapter-esp32.git
 https://github.com/jdhxyy/platsa.git
 https://github.com/jdhxyy/upgrade-esp32.git
+https://github.com/jdhxyy/tzdaemon.git
+https://github.com/jdhxyy/vsocket.git
+https://github.com/jdhxyy/statistics.git

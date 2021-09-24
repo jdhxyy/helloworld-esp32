@@ -60,5 +60,8 @@
 #include "tzflashadapter.h"
 #include "platsa.h"
 #include "upgrade.h"
+#include "tzdaemon.h"
+#include "vsocket.h"
+#include "statistics.h"
 
 #endif
