@@ -131,6 +131,9 @@ static void mainThread(void* param) {
     stBleTxHandle = StatisticsRegister("bletx");
     stBleRxHandle = StatisticsRegister("blerx");
 
+    // 温度采集模块
+    Ds18b20Load(4);
+
     // WIFI载入
     if (WifiLoad() == false) {
         LE(TAG, "main thread load failed!wifi load failed!\n");

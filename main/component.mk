@@ -33,6 +33,7 @@ COMPONENT_SRCDIRS :=  .
 	clib/tzdaemon
 	clib/vsocket
 	clib/statistics
+	clib/ds18b20-esp32
 COMPONENT_PRIV_INCLUDEDIRS := include
 	drivers/include
 	framework/include
@@ -65,3 +66,4 @@ COMPONENT_PRIV_INCLUDEDIRS := include
 	clib/tzdaemon
 	clib/vsocket
 	clib/statistics
+	clib/ds18b20-esp32

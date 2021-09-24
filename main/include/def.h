@@ -63,5 +63,6 @@
 #include "tzdaemon.h"
 #include "vsocket.h"
 #include "statistics.h"
+#include "ds18b20.h"
 
 #endif
