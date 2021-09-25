@@ -46,6 +46,9 @@ static void dealVsocketRx(VSocketRxParam* rxParam);
 static void dealBleRx(uint8_t* bytes, int size);
 static int bleTxTask(void);
 
+static int base64Test(void);
+static int randomTest(void);
+
 // testSevice 测试服务
 // 遵循谁调用谁释放原则,resp需要由回调函数使用TZMalloc开辟空间,DCom负责释放空间
 // 返回值为0表示回调成功,否则是错误码
@@ -133,6 +136,12 @@ static void mainThread(void* param) {
 
     // 温度采集模块
     Ds18b20Load(4);
+
+    // 测试base64
+    AsyncStart(base64Test, ASYNC_ONLY_ONE_TIME);
+
+    // 随机数测试
+    AsyncStart(randomTest, ASYNC_ONLY_ONE_TIME);
 
     // WIFI载入
     if (WifiLoad() == false) {
@@ -596,4 +605,36 @@ static void vsocketCase1(void) {
 
 static void vSocketSendBle(uint8_t* bytes, int size, uint32_t ip, uint16_t port) {
     BleTx(bytes, size);
+}
+
+static int base64Test(void) {
+    static struct pt pt = {0};
+    char str[128] = {0};
+    char dst[128] = {0};
+    int dstLen = 0;
+
+    PT_BEGIN(&pt);
+
+    Base64Encode((uint8_t*)"jdh99", strlen("jdh99"), str, 128);
+    LI(TAG, "base64 encode:%d %s", Base64GetEncodeLen(strlen("jdh99")), str);
+
+    Base64Decode(str, (uint8_t*)dst, 128, &dstLen);
+    LI(TAG, "base64 decode:%d %d %s", dstLen, Base64GetDecodeLen(str), dst);
+
+    PT_END(&pt);
+}
+
+static int randomTest(void) {
+    static struct pt pt = {0};
+    int i = 0;
+
+    PT_BEGIN(&pt);
+
+    TZRandomSetSeed(3);
+    for (i = 0; i < 30; i++) {
+        LI(TAG, "random value:%d", TZRandomGetRand(1, 100));
+        LI(TAG, "random coin:%d", TZRandomGetCoin());
+    }
+
+    PT_END(&pt);
 }

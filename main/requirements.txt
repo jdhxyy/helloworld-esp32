@@ -26,3 +26,6 @@ https://github.com/jdhxyy/upgrade-esp32.git
 https://github.com/jdhxyy/tzdaemon.git
 https://github.com/jdhxyy/vsocket.git
 https://github.com/jdhxyy/statistics.git
+https://github.com/jdhxyy/ds18b20-esp32.git
+https://github.com/jdhxyy/base64-clang.git
+https://github.com/jdhxyy/tzrandom.git

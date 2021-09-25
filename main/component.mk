@@ -34,6 +34,8 @@ COMPONENT_SRCDIRS :=  .
 	clib/vsocket
 	clib/statistics
 	clib/ds18b20-esp32
+	clib/base64-clang
+	clib/tzrandom
 COMPONENT_PRIV_INCLUDEDIRS := include
 	drivers/include
 	framework/include
@@ -67,3 +69,5 @@ COMPONENT_PRIV_INCLUDEDIRS := include
 	clib/vsocket
 	clib/statistics
 	clib/ds18b20-esp32
+	clib/base64-clang
+	clib/tzrandom

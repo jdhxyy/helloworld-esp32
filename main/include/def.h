@@ -64,5 +64,7 @@
 #include "vsocket.h"
 #include "statistics.h"
 #include "ds18b20.h"
+#include "base64.h"
+#include "tzrandom.h"
 
 #endif
